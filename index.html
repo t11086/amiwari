@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>あみわり — 編み物の割り出し計算</title>
+<meta name="description" content="ゲージから目数・段数をかんたん割り出し。ゲージ計算・増減目の平均計算・段数カウンター・帽子の割り出しがスマホひとつで。">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f5efe3">
+<style>
+:root{
+  --bg:#f5efe3; --card:#fffdf8; --ink:#46392c; --sub:#93826d;
+  --accent:#bf6742; --accent-soft:#f3ddd0; --line:#e8dfcd; --good:#6f8f67;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);min-height:100vh;
+  font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  padding-bottom:40px}
+header{display:flex;align-items:center;gap:6px;max-width:520px;margin:0 auto;padding:14px 16px 8px}
+header h1{font-size:20px;font-weight:800;letter-spacing:.02em}
+.back{border:none;background:var(--card);border:1px solid var(--line);color:var(--ink);
+  font-size:16px;padding:6px 12px;border-radius:999px;cursor:pointer}
+main{max-width:520px;margin:0 auto;padding:6px 16px}
+.hidden{display:none!important}
+.tagline{color:var(--sub);font-size:13px;margin:2px 2px 14px}
+
+/* ホームのカード */
+.cards{display:grid;gap:12px}
+.card{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:16px;cursor:pointer;box-shadow:0 2px 6px rgba(70,57,44,.06)}
+.card:active{transform:scale(.98)}
+.card b{font-size:17px}
+.card span{display:block;margin-top:4px;font-size:12.5px;color:var(--sub)}
+
+/* モード切替 */
+.modes{display:flex;gap:6px;background:var(--line);padding:4px;border-radius:12px;margin-bottom:12px}
+.mode{flex:1;border:none;background:transparent;color:var(--sub);font-size:14px;font-weight:700;
+  padding:9px 4px;border-radius:9px;cursor:pointer}
+.mode.active{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(70,57,44,.12)}
+
+/* 入力ボックス */
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.boxlabel{font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:8px}
+.row2{display:flex;gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;flex:1;font-size:12.5px;color:var(--sub)}
+input,select{font-size:18px;padding:10px;border:1px solid var(--line);border-radius:10px;
+  width:100%;background:#fff;color:var(--ink);appearance:none}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+
+/* 結果表示 */
+.result{background:var(--accent-soft);border-radius:14px;padding:14px 16px;font-size:15.5px;
+  line-height:1.9;margin-top:4px;overflow-wrap:anywhere}
+.result b{font-size:19px;color:var(--accent)}
+.result small{display:block;color:var(--sub);font-size:12px;line-height:1.6;margin-top:6px}
+.result .err{color:#a5462f;font-size:14px}
+.note{font-size:12px;color:var(--sub);line-height:1.7;margin:10px 2px 0}
+
+/* カウンター */
+.counter{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;text-align:center}
+.counter .cname{font-size:13px;font-weight:700;color:var(--sub)}
+.cnum{font-size:64px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
+.cnum.small{font-size:44px}
+.cbtns{display:flex;gap:8px;justify-content:center;margin-top:6px}
+.cplus{flex:1;max-width:280px;border:none;background:var(--accent);color:#fff;font-size:22px;font-weight:800;
+  padding:18px;border-radius:14px;cursor:pointer}
+.cplus:active{transform:scale(.97)}
+.cmini{border:1px solid var(--line);background:#fff;color:var(--ink);font-size:16px;
+  padding:12px 16px;border-radius:12px;cursor:pointer}
+.cprog{font-size:13px;color:var(--good);font-weight:700;margin-top:8px;min-height:18px}
+.ctarget{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:8px;font-size:13px;color:var(--sub)}
+.ctarget input{width:80px;font-size:16px;padding:6px;text-align:center}
+
+/* 解除(ロック)カード */
+.lockcard{background:var(--card);border:2px dashed var(--accent);border-radius:16px;padding:18px 16px;text-align:center;margin-top:4px}
+.lockcard p{font-size:14px;line-height:1.8;margin-bottom:10px}
+.lockcard input{text-align:center;font-size:16px;letter-spacing:.05em;margin-bottom:8px}
+.unlockbtn{width:100%;border:none;background:var(--accent);color:#fff;font-size:16px;font-weight:700;
+  padding:13px;border-radius:12px;cursor:pointer}
+.unlockmsg{font-size:13px;color:#a5462f;min-height:18px;margin-top:6px}
+
+/* 帽子レシピ */
+.recipe{counter-reset:step}
+.recipe li{list-style:none;position:relative;padding:2px 0 2px 30px;line-height:1.9}
+.recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:6px;
+  width:21px;height:21px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<header>
+  <button id="backBtn" class="back hidden">←</button>
+  <h1 id="title">🧶 あみわり</h1>
+</header>
+<main>
+
+<!-- ホーム -->
+<section id="scr-home" class="screen">
+  <p class="tagline">ゲージと寸法から、目数・段数をかんたん割り出し。</p>
+  <div class="cards">
+    <button class="card" data-go="gauge"><b>📐 ゲージ計算</b><span>寸法→目数・段数/レシピのゲージ換算</span></button>
+    <button class="card" data-go="avg"><b>➗ 増減目の平均計算</b><span>「何段ごとに1目」「何目ごとに2目一度」を一発で</span></button>
+    <button class="card" data-go="counter"><b>🔢 段数カウンター</b><span>編みながらワンタップ。模様リピートも数えられる</span></button>
+    <button class="card" data-go="hat"><b>🧢 帽子の割り出し</b><span>🔒 頭囲とゲージを入れると編み方ができあがる</span></button>
+  </div>
+  <p class="note">ゲージは「メリヤス編み10cm角」の目数・段数で入力してください。計算結果は目安です。作品の前に試し編みをおすすめします。</p>
+</section>
+
+<!-- ゲージ計算 -->
+<section id="scr-gauge" class="screen hidden">
+  <div class="modes">
+    <button class="mode active" data-mode="size">寸法から出す</button>
+    <button class="mode" data-mode="conv">レシピを換算</button>
+  </div>
+
+  <div class="mode-pane" data-pane="size">
+    <div class="box">
+      <p class="boxlabel">自分のゲージ(10cm角)</p>
+      <div class="row2">
+        <label class="f">目<input id="g1-sts" type="number" inputmode="decimal" step="0.5" value="20"></label>
+        <label class="f">段<input id="g1-rows" type="number" inputmode="decimal" step="0.5" value="28"></label>
+      </div>
+    </div>
+    <div class="box">
+      <p class="boxlabel">編みたい寸法(cm)</p>
+      <div class="row2">
+        <label class="f">幅<input id="g1-w" type="number" inputmode="decimal" step="0.5" placeholder="例: 48"></label>
+        <label class="f">丈<input id="g1-h" type="number" inputmode="decimal" step="0.5" placeholder="例: 60"></label>
+      </div>
+    </div>
+    <div class="result" id="g1-out"></div>
+  </div>
+
+  <div class="mode-pane hidden" data-pane="conv">
+    <div class="box">
+      <p class="boxlabel">レシピのゲージ(10cm角)</p>
+      <div class="row2">
+        <label class="f">目<input id="g2-psts" type="number" inputmode="decimal" step="0.5" placeholder="例: 22"></label>
+        <label class="f">段<input id="g2-prows" type="number" inputmode="decimal" step="0.5" placeholder="例: 30"></label>
+      </div>
+    </div>
+    <div class="box">
+      <p class="boxlabel">自分のゲージ(10cm角)</p>
+      <div class="row2">
+        <label class="f">目<input id="g2-msts" type="number" inputmode="decimal" step="0.5" placeholder="例: 20"></label>
+        <label class="f">段<input id="g2-mrows" type="number" inputmode="decimal" step="0.5" placeholder="例: 28"></label>
+      </div>
+    </div>
+    <div class="box">
+      <p class="boxlabel">レシピに書かれている数</p>
+      <div class="row2">
+        <label class="f">目数<input id="g2-csts" type="number" inputmode="numeric" placeholder="例: 100"></label>
+        <label class="f">段数<input id="g2-crows" type="number" inputmode="numeric" placeholder="例: 80"></label>
+      </div>
+    </div>
+    <div class="result" id="g2-out"></div>
+    <p class="note">レシピと同じ寸法に仕上げるために、自分のゲージでは何目・何段編めばよいかを出します。往復編みの身頃などは、出た数を偶数に整えると扱いやすいです。</p>
+  </div>
+</section>
+
+<!-- 平均計算 -->
+<section id="scr-avg" class="screen hidden">
+  <div class="modes">
+    <button class="mode active" data-mode="rows">数段にわたって</button>
+    <button class="mode" data-mode="spread">1段の中で</button>
+  </div>
+
+  <div class="mode-pane" data-pane="rows">
+    <div class="box">
+      <p class="boxlabel">袖下・すそ・脇の増減目に</p>
+      <div class="row2">
+        <label class="f">何段のあいだに<input id="a1-rows" type="number" inputmode="numeric" placeholder="例: 50"></label>
+        <label class="f">何回(1目ずつ)<input id="a1-times" type="number" inputmode="numeric" placeholder="例: 8"></label>
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <label class="f">増やす/減らす
+          <select id="a1-dir"><option value="増">増やす</option><option value="減">減らす</option></select>
+        </label>
+      </div>
+    </div>
+    <div class="result" id="a1-out"></div>
+    <p class="note">端数のぶん(間隔が違う回)は、編みはじめ側・編み終わり側のどちらに寄せてもかまいません。</p>
+  </div>
+
+  <div class="mode-pane hidden" data-pane="spread">
+    <div class="box">
+      <p class="boxlabel">帽子のトップ・すその絞りなどに</p>
+      <div class="row2">
+        <label class="f">いまの目数<input id="a2-from" type="number" inputmode="numeric" placeholder="例: 114"></label>
+        <label class="f">あとの目数<input id="a2-to" type="number" inputmode="numeric" placeholder="例: 88"></label>
+      </div>
+    </div>
+    <div class="result" id="a2-out"></div>
+  </div>
+</section>
+
+<!-- 段数カウンター -->
+<section id="scr-counter" class="screen hidden">
+  <div class="counter">
+    <p class="cname">段数</p>
+    <p class="cnum" id="c-main">0</p>
+    <div class="cbtns">
+      <button class="cmini" id="c-minus">−1</button>
+      <button class="cplus" id="c-plus">＋1段</button>
+    </div>
+    <p class="cprog" id="c-prog"></p>
+    <div class="ctarget">目標
+      <input id="c-target" type="number" inputmode="numeric" placeholder="--">段
+      <button class="cmini" id="c-reset">リセット</button>
+    </div>
+  </div>
+  <div class="counter">
+    <p class="cname">模様リピート</p>
+    <p class="cnum small" id="c-sub">0</p>
+    <div class="cbtns">
+      <button class="cmini" id="s-minus">−1</button>
+      <button class="cplus" id="s-plus" style="max-width:200px;padding:12px">＋1</button>
+      <button class="cmini" id="s-reset">0に</button>
+    </div>
+  </div>
+  <p class="note">数字は自動保存されます。アプリを閉じても続きから数えられます。</p>
+</section>
+
+<!-- 帽子の割り出し -->
+<section id="scr-hat" class="screen hidden">
+  <div class="box">
+    <p class="boxlabel">サイズ</p>
+    <div class="row2">
+      <label class="f">頭囲(cm)<input id="h-head" type="number" inputmode="decimal" step="0.5" value="56"></label>
+      <label class="f">深さ(cm)<input id="h-depth" type="number" inputmode="decimal" step="0.5" value="21"></label>
+    </div>
+    <div class="row2" style="margin-top:10px">
+      <label class="f">かぶり心地
+        <select id="h-ease">
+          <option value="-2">ゆったりめ(−2cm)</option>
+          <option value="-3" selected>標準(−3cm)</option>
+          <option value="-4">ぴったり(−4cm)</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  <div class="box">
+    <p class="boxlabel">ゴム編み(ふち)</p>
+    <div class="row2">
+      <label class="f">種類
+        <select id="h-rib"><option value="2" selected>2目ゴム編み</option><option value="1">1目ゴム編み</option></select>
+      </label>
+      <label class="f">丈(cm)<input id="h-ribcm" type="number" inputmode="decimal" step="0.5" value="5"></label>
+    </div>
+  </div>
+  <div class="box">
+    <p class="boxlabel">ゲージ(メリヤス編み・10cm角)と減目</p>
+    <div class="row2">
+      <label class="f">目<input id="h-sts" type="number" inputmode="decimal" step="0.5" value="20"></label>
+      <label class="f">段<input id="h-rows" type="number" inputmode="decimal" step="0.5" value="28"></label>
+      <label class="f">分割数
+        <select id="h-sec"><option value="6" selected>6(定番)</option><option value="8">8</option></select>
+      </label>
+    </div>
+  </div>
+
+  <div id="hat-lock" class="lockcard">
+    <p>🔒 帽子の割り出しは<b>買い切り機能</b>です。<br>解除コードを入力すると、頭囲とゲージに合わせた編み方がその場で作られます。</p>
+    <input id="unlock-code" type="text" autocapitalize="characters" autocomplete="off" placeholder="解除コード">
+    <button class="unlockbtn" id="unlock-btn">解除する</button>
+    <p class="unlockmsg" id="unlock-msg"></p>
+  </div>
+  <div class="result hidden" id="hat-result"></div>
+</section>
+
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
