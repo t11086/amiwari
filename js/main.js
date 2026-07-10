@@ -9,13 +9,15 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* ---------- 画面遷移 ---------- */
 const TITLES = {
-  home: '🧶 あみわり', gauge: '📐 ゲージ計算', avg: '➗ 増減目の平均計算',
-  counter: '🔢 段数カウンター', hat: '🧢 帽子の割り出し',
+  home: 'あみわり', gauge: 'ゲージ計算', avg: '増減目の平均計算',
+  counter: '段数カウンター', hat: '帽子の割り出し',
 };
+const LOGO_SVG = document.querySelector('#title svg').outerHTML;
 function show(name) {
   $$('.screen').forEach(s => s.classList.toggle('hidden', s.id !== 'scr-' + name));
   $('#backBtn').classList.toggle('hidden', name === 'home');
-  $('#title').textContent = TITLES[name];
+  // ホームは毛糸玉ロゴ付き、各画面はタイトルのみ
+  $('#title').innerHTML = (name === 'home' ? LOGO_SVG : '') + TITLES[name];
   window.scrollTo(0, 0);
 }
 $('#backBtn').onclick = () => show('home');
@@ -133,7 +135,7 @@ function renderCnt() {
   $('#c-sub').textContent = cnt.sub;
   if (cnt.target > 0) {
     const left = cnt.target - cnt.main;
-    $('#c-prog').textContent = left > 0 ? `目標まで あと${left}段` : '🎉 目標の段数に届きました';
+    $('#c-prog').textContent = left > 0 ? `目標まで あと${left}段` : '目標の段数に届きました!';
   } else {
     $('#c-prog').textContent = '';
   }
@@ -203,7 +205,7 @@ function renderHat() {
   out.innerHTML =
     `<ol class="recipe">${steps.map(s => `<li>${s}</li>`).join('')}</ol>` +
     `<small>できあがり: 周囲 約${cm1(p.finishCircCm)}cm(かぶると伸びます)・深さ 約${cm1(p.finishDepthCm)}cm/` +
-    `合計 ${p.totalRows}段<br>⚠️ ゲージ次第で仕上がりは変わります。作品の前に必ず試し編みを。</small>`;
+    `合計 ${p.totalRows}段<br>※ ゲージ次第で仕上がりは変わります。作品の前に必ず試し編みを。</small>`;
 }
 bind(['h-head', 'h-depth', 'h-ribcm', 'h-sts', 'h-rows'], renderHat);
 ['h-ease', 'h-rib', 'h-sec'].forEach(id => $('#' + id).addEventListener('change', renderHat));
