@@ -215,6 +215,39 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { });
 }
 
+/* ホーム画面に追加(A2HS)
+   - Android/Chrome系: beforeinstallprompt を捕まえて本物のインストールを出す
+   - iOS Safari: APIがないので共有メニューの手順ガイドを開く
+   - すでにホーム画面から起動している場合(standalone)はカードごと出さない
+   - ?install=demo でカード+ガイドを強制表示(スクショ検証用) */
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOSはMac名乗り
+let installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  if (!isStandalone) $('#install-card').classList.remove('hidden');
+});
+if (!isStandalone && isIOS) $('#install-card').classList.remove('hidden');
+window.addEventListener('appinstalled', () => $('#install-card').classList.add('hidden'));
+
+$('#install-btn').onclick = async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+  } else {
+    $('#ios-guide').classList.toggle('hidden'); // iOS等: 手順ガイドを開閉
+  }
+};
+
+if (new URLSearchParams(location.search).get('install') === 'demo') {
+  $('#install-card').classList.remove('hidden');
+  $('#ios-guide').classList.remove('hidden');
+}
+
 // ?scr=gauge などで直接その画面を開ける(開発・検証用のディープリンク)
 const initScr = new URLSearchParams(location.search).get('scr');
 show(TITLES[initScr] ? initScr : 'home');

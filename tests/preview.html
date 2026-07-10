@@ -12,7 +12,8 @@ const q = new URLSearchParams(location.search);
 if (q.get('unlock') === '1') localStorage.setItem('amiwari-unlocked', '1');
 const f = document.getElementById('f');
 if (q.get('h')) f.style.height = q.get('h') + 'px'; // 縦長画面の全体確認用
-f.src = '../index.html?scr=' + (q.get('scr') || 'home');
+f.src = '../index.html?scr=' + (q.get('scr') || 'home')
+  + (q.get('install') ? '&install=' + q.get('install') : '');
 f.onload = () => {
   const d = f.contentDocument, w = f.contentWindow;
   const pane = q.get('pane'); // pane=conv 等でタブを切り替える

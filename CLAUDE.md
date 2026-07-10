@@ -51,7 +51,9 @@
 - `tests/calc.test.mjs` — 計算ロジックのテスト（作例との突き合わせ + 性質チェックの総当たり）
 - `tests/preview.html` — スマホ幅検証用ラッパー（下記「検証手順」参照）
 - `manifest.json` / `sw.js` — PWA（swはネットワーク優先。push後の更新は普通に反映される）
-- `icon-source.html` — PWAアイコンの元（🧶）。再生成はつきあかりと同じ手順
+- `favicon.svg` / `favicon.png` — ファビコン（藍地に毛糸玉の線画。pngはicon-512から `sips -z 48 48` で生成）
+- `icon-source.html` — PWAアイコンの元（毛糸玉SVG。favicon.svg・ヘッダーロゴと同じパス）。
+  再生成: ヘッドレスChromeで512pxスクショ → sipsで192/48に縮小
 
 ## 機能（現状）
 
@@ -60,6 +62,9 @@
 - 🔢 段数カウンター（無料）: 段数 + 模様リピートの2連。localStorage保存、目標段数で残り表示
 - 🧢 帽子の割り出し（🔒買い切り）: 頭囲・深さ・ゆとり・ゴム編み・ゲージ・分割数 → 手順書を生成
   - クラウンは「2段ごと→毎段」の定番減目構成。作り目はゴム編みと分割数の公倍数に自動で丸める
+- ホーム画面に追加（A2HS）動線: ホーム下部のカード。Android/Chrome系は beforeinstallprompt で
+  本物のインストール、iOS Safariは共有メニューの手順ガイドを開閉。standalone起動時は非表示。
+  `?install=demo` で強制表示（スクショ検証用）
 - 解除コード: `AMIWARI-HAJIME-2026`（SHA-256照合。ハッシュは js/main.js の UNLOCK_HASH）。
   **販売開始時に必ず新コードへ差し替えること**
 
