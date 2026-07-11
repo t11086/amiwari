@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>あみわり — 編み物の割り出し計算</title>
-<meta name="description" content="ゲージから目数・段数をかんたん割り出し。ゲージ計算・増減目の平均計算・段数カウンター・帽子の割り出しがスマホひとつで。">
+<meta name="description" content="ゲージから目数・段数をかんたん割り出し。ゲージ計算・増減目の平均計算・段数カウンター・帽子の割り出し(無料β公開中)がスマホひとつで。">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.png" type="image/png" sizes="48x48">
@@ -128,6 +128,14 @@ input:focus,select:focus{outline:2px solid var(--navy);outline-offset:-1px}
 .iosguide{margin-top:12px;border-top:1px dashed var(--rule);padding-top:10px;font-size:13.5px}
 .iosguide .inlineic{vertical-align:-2px;color:var(--navy)}
 
+/* 無料βの表示 */
+.beta-badge{flex:none;font-size:10.5px;font-weight:700;color:#fff;background:var(--mustard);
+  border-radius:4px;padding:2px 6px;letter-spacing:.08em}
+.betacard{background:#fdf6e4;border:1.5px solid var(--mustard);border-radius:8px;
+  padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.85}
+.betacard b{color:var(--navy)}
+.betacard .betalink{display:inline-block;margin-top:4px;color:var(--navy);font-weight:700}
+
 /* 帽子レシピ */
 .recipe{counter-reset:step}
 .recipe li{list-style:none;position:relative;padding:2px 0 2px 30px;line-height:1.95}
@@ -161,7 +169,7 @@ input:focus,select:focus{outline:2px solid var(--navy);outline-offset:-1px}
     </button>
     <button class="card" data-go="hat">
       <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 14a7 7 0 0 1 14 0"/><rect x="4" y="14" width="16" height="4.5" rx="1"/><circle cx="12" cy="5" r="1.8"/></svg></span>
-      <span class="tx"><b>帽子の割り出し<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></b><span>頭囲とゲージを入れると編み方ができあがる</span></span>
+      <span class="tx"><b>帽子の割り出し<span id="home-lock" class="hidden"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></span><span id="home-beta" class="beta-badge hidden">無料β</span></b><span>頭囲とゲージを入れると編み方ができあがる</span></span>
     </button>
   </div>
   <p class="note">ゲージは「メリヤス編み10cm角」の目数・段数で入力してください。計算結果は目安です。作品の前に試し編みをおすすめします。</p>
@@ -300,6 +308,12 @@ input:focus,select:focus{outline:2px solid var(--navy);outline-offset:-1px}
 
 <!-- 帽子の割り出し -->
 <section id="scr-hat" class="screen hidden">
+  <div id="hat-beta" class="betacard hidden">
+    <b>ただいま無料βとして公開中です</b><br>
+    帽子の割り出しは本来買い切りの機能ですが、いまはどなたでも無料で使えます。<br>
+    ※ 計算どおりに編んでみた感想や「サイズが合わなかった」という報告を募集しています。
+    <a class="betalink hidden" id="feedback-link" target="_blank" rel="noopener">感想・報告を送る(Googleフォーム)→</a>
+  </div>
   <div class="box">
     <p class="boxlabel">サイズ</p>
     <div class="row2">

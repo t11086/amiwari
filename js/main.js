@@ -151,11 +151,21 @@ $('#c-target').value = cnt.target || '';
 $('#c-target').addEventListener('input', () => { cnt.target = int('c-target') || 0; saveCnt(); });
 renderCnt();
 
-/* ---------- 帽子の割り出し(🔒買い切り) ---------- */
-// 販売開始時に必ず新コードへ差し替えること(現コードはCLAUDE.md参照)
+/* ---------- 帽子の割り出し(本来は買い切り。いまは無料β公開中) ---------- */
+// β終了時: HAT_BETA を false に戻し、解除コードを新しいものに差し替えること(現コードはCLAUDE.md参照)
+const HAT_BETA = true;
+// 試し編みの感想募集フォーム(Googleフォーム)。空のあいだはリンク自体を出さない
+const FEEDBACK_URL = '';
 const UNLOCK_HASH = '4f1e16a70558241ecd1cd61da79d3d2c4e2dfbe9fe2f7fef6dc42ea7ab3a7d69';
 const UKEY = 'amiwari-unlocked';
-let unlocked = localStorage.getItem(UKEY) === '1';
+let unlocked = HAT_BETA || localStorage.getItem(UKEY) === '1';
+$('#hat-beta').classList.toggle('hidden', !HAT_BETA);
+$('#home-beta').classList.toggle('hidden', !HAT_BETA);
+$('#home-lock').classList.toggle('hidden', HAT_BETA);
+if (FEEDBACK_URL) {
+  $('#feedback-link').href = FEEDBACK_URL;
+  $('#feedback-link').classList.remove('hidden');
+}
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
