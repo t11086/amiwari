@@ -125,30 +125,72 @@ function renderAvgSpread() {
 }
 bind(['a2-from', 'a2-to'], renderAvgSpread);
 
-/* ---------- 段数カウンター ---------- */
-const CKEY = 'amiwari-counter';
-let cnt = { main: 0, sub: 0, target: 0 };
-try { cnt = { ...cnt, ...JSON.parse(localStorage.getItem(CKEY) || '{}') } } catch { }
+/* ---------- 段数カウンター(編みかけごとに保存) ---------- */
+const CKEY = 'amiwari-counter-v2';
+const CKEY_OLD = 'amiwari-counter'; // 旧形式(1件分)。初回だけ1件目の編みかけとして引き継ぐ
+const newProj = name => ({ name, main: 0, sub: 0, target: 0 });
+let cst = null;
+try { cst = JSON.parse(localStorage.getItem(CKEY) || 'null'); } catch { }
+if (!cst || !Array.isArray(cst.list) || !cst.list.length) {
+  let first = newProj('編みかけ1');
+  try { first = { ...first, ...(JSON.parse(localStorage.getItem(CKEY_OLD) || 'null') || {}) }; } catch { }
+  cst = { cur: 0, list: [first] };
+  localStorage.removeItem(CKEY_OLD);
+}
+cst.cur = Math.min(Math.max(cst.cur | 0, 0), cst.list.length - 1);
+const proj = () => cst.list[cst.cur];
 
 function renderCnt() {
-  $('#c-main').textContent = cnt.main;
-  $('#c-sub').textContent = cnt.sub;
-  if (cnt.target > 0) {
-    const left = cnt.target - cnt.main;
+  const p = proj();
+  const chips = $('#c-chips');
+  chips.innerHTML = '';
+  cst.list.forEach((q, i) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (i === cst.cur ? ' active' : '');
+    b.textContent = q.name || `編みかけ${i + 1}`;
+    b.onclick = () => { cst.cur = i; saveCnt(); };
+    chips.appendChild(b);
+  });
+  const add = document.createElement('button');
+  add.className = 'chip add';
+  add.textContent = '＋ふやす';
+  add.onclick = () => {
+    cst.list.push(newProj(`編みかけ${cst.list.length + 1}`));
+    cst.cur = cst.list.length - 1;
+    saveCnt();
+  };
+  chips.appendChild(add);
+
+  $('#c-main').textContent = p.main;
+  $('#c-sub').textContent = p.sub;
+  // 入力中に値を書き戻すとカーソルが飛ぶので、フォーカス外のときだけ同期する
+  if (document.activeElement !== $('#c-name')) $('#c-name').value = p.name;
+  if (document.activeElement !== $('#c-target')) $('#c-target').value = p.target || '';
+  if (p.target > 0) {
+    const left = p.target - p.main;
     $('#c-prog').textContent = left > 0 ? `目標まで あと${left}段` : '目標の段数に届きました!';
   } else {
     $('#c-prog').textContent = '';
   }
 }
-function saveCnt() { localStorage.setItem(CKEY, JSON.stringify(cnt)); renderCnt(); }
-$('#c-plus').onclick = () => { cnt.main++; saveCnt(); };
-$('#c-minus').onclick = () => { if (cnt.main > 0) cnt.main--; saveCnt(); };
-$('#c-reset').onclick = () => { if (confirm('段数を0に戻しますか?')) { cnt.main = 0; saveCnt(); } };
-$('#s-plus').onclick = () => { cnt.sub++; saveCnt(); };
-$('#s-minus').onclick = () => { if (cnt.sub > 0) cnt.sub--; saveCnt(); };
-$('#s-reset').onclick = () => { cnt.sub = 0; saveCnt(); };
-$('#c-target').value = cnt.target || '';
-$('#c-target').addEventListener('input', () => { cnt.target = int('c-target') || 0; saveCnt(); });
+function saveCnt() { localStorage.setItem(CKEY, JSON.stringify(cst)); renderCnt(); }
+$('#c-plus').onclick = () => { proj().main++; saveCnt(); };
+$('#c-minus').onclick = () => { if (proj().main > 0) proj().main--; saveCnt(); };
+$('#c-reset').onclick = () => { if (confirm('段数を0に戻しますか?')) { proj().main = 0; saveCnt(); } };
+$('#s-plus').onclick = () => { proj().sub++; saveCnt(); };
+$('#s-minus').onclick = () => { if (proj().sub > 0) proj().sub--; saveCnt(); };
+$('#s-reset').onclick = () => { proj().sub = 0; saveCnt(); };
+$('#c-target').addEventListener('input', () => { proj().target = int('c-target') || 0; saveCnt(); });
+$('#c-name').addEventListener('input', () => { proj().name = $('#c-name').value; saveCnt(); });
+$('#c-name').addEventListener('blur', () => { proj().name = $('#c-name').value.trim(); saveCnt(); });
+$('#c-del').onclick = () => {
+  const label = proj().name || `編みかけ${cst.cur + 1}`;
+  if (!confirm(`「${label}」を削除しますか?\n数えた段数も消えます`)) return;
+  cst.list.splice(cst.cur, 1);
+  if (!cst.list.length) cst.list.push(newProj('編みかけ1'));
+  cst.cur = Math.min(cst.cur, cst.list.length - 1);
+  saveCnt();
+};
 renderCnt();
 
 /* ---------- 帽子の割り出し(本来は買い切り。いまは無料β公開中) ---------- */

@@ -113,6 +113,15 @@ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;borde
   font-size:13px;color:var(--sub)}
 .ctarget input{width:80px;font-size:16px;padding:6px;text-align:center}
 
+/* カウンター: 編みかけの切り替えチップ */
+.chips{display:flex;gap:8px;margin:2px 0 14px;flex-wrap:wrap}
+.chip{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:13px;
+  color:var(--teal-deep);background:var(--panel);border:none;border-radius:999px;
+  padding:10px 17px;cursor:pointer;max-width:48vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.active{background:var(--teal);color:#fff}
+.chip.add{background:transparent;border:1.5px dashed var(--teal);color:var(--teal-deep);padding:8.5px 15px}
+.cdel{width:100%;margin-top:12px;color:var(--red)}
+
 /* 解除(ロック)カード */
 .lockcard{background:var(--teal-pale);border-radius:28px 34px 28px 36px;
   padding:20px 18px;text-align:center;margin-top:4px}
@@ -300,6 +309,7 @@ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;borde
 
 <!-- 段数カウンター -->
 <section id="scr-counter" class="screen hidden">
+  <div class="chips" id="c-chips"></div>
   <div class="counter">
     <p class="cname">段数</p>
     <p class="cnum" id="c-main">0</p>
@@ -322,7 +332,12 @@ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;borde
       <button class="cmini" id="s-reset">0に</button>
     </div>
   </div>
-  <p class="note">※ 数字は自動保存されます。アプリを閉じても続きから数えられます。</p>
+  <div class="box">
+    <p class="boxlabel">この編みかけ</p>
+    <label class="f">名前<input id="c-name" type="text" maxlength="20" placeholder="例: 冬の帽子"></label>
+    <button class="cmini cdel" id="c-del">この編みかけを削除</button>
+  </div>
+  <p class="note">※ 数字は編みかけごとに自動保存されます。アプリを閉じても続きから数えられます。</p>
 </section>
 
 <!-- 帽子の割り出し -->

@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>counter test</title>
+<pre id="log"></pre>
+<iframe id="f" style="width:400px;height:800px"></iframe>
+<script>
+const log = m => document.getElementById('log').textContent += m + '\n';
+const f = document.getElementById('f');
+const KEY = 'amiwari-counter-v2', OLD = 'amiwari-counter';
+
+// 旧形式データを仕込んでから読み込む(引き継ぎ検証)
+localStorage.clear();
+localStorage.setItem(OLD, JSON.stringify({ main: 12, sub: 3, target: 40 }));
+
+let phase = 0;
+f.onload = () => setTimeout(() => {
+  const d = f.contentDocument, w = f.contentWindow;
+  const $ = s => d.querySelector(s);
+  const chips = () => [...d.querySelectorAll('#c-chips .chip')];
+  if (phase === 0) {
+    phase = 1;
+    // 引き継ぎ: 旧データが1件目に入っているか
+    log('migrated main=' + $('#c-main').textContent + ' sub=' + $('#c-sub').textContent + ' target=' + $('#c-target').value);
+    log('old key removed=' + (localStorage.getItem(OLD) === null));
+    log('chips(初期)=' + chips().map(c => c.textContent).join('/'));
+    // ＋1段
+    $('#c-plus').click(); $('#c-plus').click();
+    log('after +2: main=' + $('#c-main').textContent + ' prog=' + $('#c-prog').textContent);
+    // 追加 → 新規はゼロ
+    chips().at(-1).click();
+    log('chips(追加後)=' + chips().map(c => c.textContent).join('/'));
+    log('new proj main=' + $('#c-main').textContent + ' sub=' + $('#c-sub').textContent + ' target="' + $('#c-target').value + '"');
+    // 名前変更
+    $('#c-name').value = '冬の帽子';
+    $('#c-name').dispatchEvent(new w.Event('input'));
+    log('renamed chips=' + chips().map(c => c.textContent).join('/'));
+    // 新規側でカウント
+    $('#c-plus').click();
+    // 1件目に切り替え → 値が戻るか
+    chips()[0].click();
+    log('switch back: main=' + $('#c-main').textContent + ' target=' + $('#c-target').value);
+    // リロードして永続化検証
+    f.src = '../index.html?scr=counter&t=2';
+  } else if (phase === 1) {
+    phase = 2;
+    log('--- reload ---');
+    log('chips=' + chips().map(c => c.textContent).join('/'));
+    log('cur main=' + $('#c-main').textContent);
+    // 削除(confirmはOK扱い)
+    w.confirm = () => true;
+    $('#c-del').click();
+    log('after del chips=' + chips().map(c => c.textContent).join('/'));
+    log('after del main=' + $('#c-main').textContent);
+    // 全部消したら空の1件が残るか
+    $('#c-del').click();
+    log('after del all chips=' + chips().map(c => c.textContent).join('/') + ' main=' + $('#c-main').textContent);
+    log('DONE');
+  }
+}, 600);
+f.src = '../index.html?scr=counter';
+</script>
