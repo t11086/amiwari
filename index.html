@@ -120,7 +120,12 @@ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;borde
   padding:10px 17px;cursor:pointer;max-width:48vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip.active{background:var(--teal);color:#fff}
 .chip.add{background:transparent;border:1.5px dashed var(--teal);color:var(--teal-deep);padding:8.5px 15px}
-.cdel{width:100%;margin-top:12px;color:var(--red)}
+.chiplabel{font-family:"Zen Maru Gothic",sans-serif;font-size:11px;font-weight:700;
+  color:var(--sub);letter-spacing:.14em;align-self:center}
+.chips.parts{margin-top:-4px}
+.chips.parts .chip{font-size:12px;padding:7.5px 14px}
+.chips.parts .chip.add{padding:6px 12px}
+.cdel{flex:1;margin-top:12px;color:var(--red);font-size:13.5px;padding:12px 8px}
 
 /* 解除(ロック)カード */
 .lockcard{background:var(--teal-pale);border-radius:28px 34px 28px 36px;
@@ -310,6 +315,7 @@ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;borde
 <!-- 段数カウンター -->
 <section id="scr-counter" class="screen hidden">
   <div class="chips" id="c-chips"></div>
+  <div class="chips parts" id="p-chips"></div>
   <div class="counter">
     <p class="cname">段数</p>
     <p class="cnum" id="c-main">0</p>
@@ -333,11 +339,19 @@ input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;borde
     </div>
   </div>
   <div class="box">
-    <p class="boxlabel">この編みかけ</p>
-    <label class="f">名前<input id="c-name" type="text" maxlength="20" placeholder="例: 冬の帽子"></label>
-    <button class="cmini cdel" id="c-del">この編みかけを削除</button>
+    <p class="boxlabel">名前の変更・削除</p>
+    <label class="f">編みかけの名前<input id="c-name" type="text" maxlength="20" placeholder="例: 冬のセーター"></label>
+    <label class="f" style="margin-top:10px">パーツの名前<input id="p-name" type="text" maxlength="20" placeholder="例: 前身頃" list="part-suggest"></label>
+    <datalist id="part-suggest">
+      <option value="前身頃"><option value="後ろ身頃"><option value="右袖"><option value="左袖">
+      <option value="衿"><option value="本体">
+    </datalist>
+    <div class="row2">
+      <button class="cmini cdel" id="p-del">このパーツを削除</button>
+      <button class="cmini cdel" id="c-del">この編みかけを削除</button>
+    </div>
   </div>
-  <p class="note">※ 数字は編みかけごとに自動保存されます。アプリを閉じても続きから数えられます。</p>
+  <p class="note">※ 数字は編みかけ・パーツごとに自動保存されます。アプリを閉じても続きから数えられます。</p>
 </section>
 
 <!-- 帽子の割り出し -->

@@ -125,67 +125,107 @@ function renderAvgSpread() {
 }
 bind(['a2-from', 'a2-to'], renderAvgSpread);
 
-/* ---------- 段数カウンター(編みかけごとに保存) ---------- */
-const CKEY = 'amiwari-counter-v2';
-const CKEY_OLD = 'amiwari-counter'; // 旧形式(1件分)。初回だけ1件目の編みかけとして引き継ぐ
-const newProj = name => ({ name, main: 0, sub: 0, target: 0 });
+/* ---------- 段数カウンター(編みかけ > パーツの2階層で保存) ---------- */
+const CKEY = 'amiwari-counter-v3';
+const CKEY_V2 = 'amiwari-counter-v2'; // 旧: 編みかけごと(パーツなし)
+const CKEY_V1 = 'amiwari-counter';    // 旧: 1件分だけ
+const newPart = name => ({ name, main: 0, sub: 0, target: 0 });
+const newProj = name => ({ name, curPart: 0, parts: [newPart('')] });
 let cst = null;
 try { cst = JSON.parse(localStorage.getItem(CKEY) || 'null'); } catch { }
 if (!cst || !Array.isArray(cst.list) || !cst.list.length) {
-  let first = newProj('編みかけ1');
-  try { first = { ...first, ...(JSON.parse(localStorage.getItem(CKEY_OLD) || 'null') || {}) }; } catch { }
-  cst = { cur: 0, list: [first] };
-  localStorage.removeItem(CKEY_OLD);
+  // v2 → 各編みかけを「パーツ1つ」として引き継ぐ。v2もなければ v1 を1件目に
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem(CKEY_V2) || 'null'); } catch { }
+  if (old && Array.isArray(old.list) && old.list.length) {
+    cst = {
+      cur: old.cur | 0,
+      list: old.list.map(q => ({ name: q.name || '', curPart: 0, parts: [{ ...newPart(''), main: q.main | 0, sub: q.sub | 0, target: q.target | 0 }] })),
+    };
+  } else {
+    let p1 = null;
+    try { p1 = JSON.parse(localStorage.getItem(CKEY_V1) || 'null'); } catch { }
+    const first = newProj('編みかけ1');
+    if (p1) first.parts[0] = { ...first.parts[0], main: p1.main | 0, sub: p1.sub | 0, target: p1.target | 0 };
+    cst = { cur: 0, list: [first] };
+  }
+  localStorage.removeItem(CKEY_V2);
+  localStorage.removeItem(CKEY_V1);
 }
 cst.cur = Math.min(Math.max(cst.cur | 0, 0), cst.list.length - 1);
+cst.list.forEach(q => {
+  if (!Array.isArray(q.parts) || !q.parts.length) q.parts = [newPart('')];
+  q.curPart = Math.min(Math.max(q.curPart | 0, 0), q.parts.length - 1);
+});
 const proj = () => cst.list[cst.cur];
+const part = () => proj().parts[proj().curPart];
 
-function renderCnt() {
-  const p = proj();
-  const chips = $('#c-chips');
-  chips.innerHTML = '';
-  cst.list.forEach((q, i) => {
+function renderChips(wrap, label, items, curIdx, fallback, onPick, onAdd) {
+  wrap.innerHTML = '';
+  const lb = document.createElement('span');
+  lb.className = 'chiplabel';
+  lb.textContent = label;
+  wrap.appendChild(lb);
+  items.forEach((q, i) => {
     const b = document.createElement('button');
-    b.className = 'chip' + (i === cst.cur ? ' active' : '');
-    b.textContent = q.name || `編みかけ${i + 1}`;
-    b.onclick = () => { cst.cur = i; saveCnt(); };
-    chips.appendChild(b);
+    b.className = 'chip' + (i === curIdx ? ' active' : '');
+    b.textContent = q.name || `${fallback}${i + 1}`;
+    b.onclick = () => onPick(i);
+    wrap.appendChild(b);
   });
   const add = document.createElement('button');
   add.className = 'chip add';
   add.textContent = '＋ふやす';
-  add.onclick = () => {
-    cst.list.push(newProj(`編みかけ${cst.list.length + 1}`));
-    cst.cur = cst.list.length - 1;
-    saveCnt();
-  };
-  chips.appendChild(add);
+  add.onclick = onAdd;
+  wrap.appendChild(add);
+}
 
-  $('#c-main').textContent = p.main;
-  $('#c-sub').textContent = p.sub;
+function renderCnt() {
+  const p = proj(), pt = part();
+  renderChips($('#c-chips'), '編みかけ', cst.list, cst.cur, '編みかけ',
+    i => { cst.cur = i; saveCnt(); },
+    () => { cst.list.push(newProj(`編みかけ${cst.list.length + 1}`)); cst.cur = cst.list.length - 1; saveCnt(); });
+  renderChips($('#p-chips'), 'パーツ', p.parts, p.curPart, 'パーツ',
+    i => { p.curPart = i; saveCnt(); },
+    () => { p.parts.push(newPart(`パーツ${p.parts.length + 1}`)); p.curPart = p.parts.length - 1; saveCnt(); });
+
+  $('#c-main').textContent = pt.main;
+  $('#c-sub').textContent = pt.sub;
   // 入力中に値を書き戻すとカーソルが飛ぶので、フォーカス外のときだけ同期する
   if (document.activeElement !== $('#c-name')) $('#c-name').value = p.name;
-  if (document.activeElement !== $('#c-target')) $('#c-target').value = p.target || '';
-  if (p.target > 0) {
-    const left = p.target - p.main;
+  if (document.activeElement !== $('#p-name')) $('#p-name').value = pt.name;
+  if (document.activeElement !== $('#c-target')) $('#c-target').value = pt.target || '';
+  if (pt.target > 0) {
+    const left = pt.target - pt.main;
     $('#c-prog').textContent = left > 0 ? `目標まで あと${left}段` : '目標の段数に届きました!';
   } else {
     $('#c-prog').textContent = '';
   }
 }
 function saveCnt() { localStorage.setItem(CKEY, JSON.stringify(cst)); renderCnt(); }
-$('#c-plus').onclick = () => { proj().main++; saveCnt(); };
-$('#c-minus').onclick = () => { if (proj().main > 0) proj().main--; saveCnt(); };
-$('#c-reset').onclick = () => { if (confirm('段数を0に戻しますか?')) { proj().main = 0; saveCnt(); } };
-$('#s-plus').onclick = () => { proj().sub++; saveCnt(); };
-$('#s-minus').onclick = () => { if (proj().sub > 0) proj().sub--; saveCnt(); };
-$('#s-reset').onclick = () => { proj().sub = 0; saveCnt(); };
-$('#c-target').addEventListener('input', () => { proj().target = int('c-target') || 0; saveCnt(); });
+$('#c-plus').onclick = () => { part().main++; saveCnt(); };
+$('#c-minus').onclick = () => { if (part().main > 0) part().main--; saveCnt(); };
+$('#c-reset').onclick = () => { if (confirm('段数を0に戻しますか?')) { part().main = 0; saveCnt(); } };
+$('#s-plus').onclick = () => { part().sub++; saveCnt(); };
+$('#s-minus').onclick = () => { if (part().sub > 0) part().sub--; saveCnt(); };
+$('#s-reset').onclick = () => { part().sub = 0; saveCnt(); };
+$('#c-target').addEventListener('input', () => { part().target = int('c-target') || 0; saveCnt(); });
 $('#c-name').addEventListener('input', () => { proj().name = $('#c-name').value; saveCnt(); });
 $('#c-name').addEventListener('blur', () => { proj().name = $('#c-name').value.trim(); saveCnt(); });
+$('#p-name').addEventListener('input', () => { part().name = $('#p-name').value; saveCnt(); });
+$('#p-name').addEventListener('blur', () => { part().name = $('#p-name').value.trim(); saveCnt(); });
+$('#p-del').onclick = () => {
+  const p = proj();
+  const label = part().name || `パーツ${p.curPart + 1}`;
+  if (!confirm(`パーツ「${label}」を削除しますか?\n数えた段数も消えます`)) return;
+  p.parts.splice(p.curPart, 1);
+  if (!p.parts.length) p.parts.push(newPart(''));
+  p.curPart = Math.min(p.curPart, p.parts.length - 1);
+  saveCnt();
+};
 $('#c-del').onclick = () => {
   const label = proj().name || `編みかけ${cst.cur + 1}`;
-  if (!confirm(`「${label}」を削除しますか?\n数えた段数も消えます`)) return;
+  if (!confirm(`「${label}」を削除しますか?\nパーツと数えた段数も消えます`)) return;
   cst.list.splice(cst.cur, 1);
   if (!cst.list.length) cst.list.push(newProj('編みかけ1'));
   cst.cur = Math.min(cst.cur, cst.list.length - 1);
